@@ -16,23 +16,23 @@ export class OAuth2Service {
       this.clientSecret,
       this.redirectUrl,
     );
-    
+
     // Temp for dev
     this.setCredentials(
       process.env.GOOGLE_ACCESS_TOKEN,
-      process.env.GOOGLE_REFRESH_TOKEN
+      process.env.GOOGLE_REFRESH_TOKEN,
     );
   }
 
   setCredentials(accessToken: string, refreshToken: string): void {
     this.oAuth2Client.setCredentials({
-        access_token: accessToken,
-        refresh_token: refreshToken
-    })
+      access_token: accessToken,
+      refresh_token: refreshToken,
+    });
   }
 
   getOAuth2Client(): OAuth2Client {
-      return this.oAuth2Client;
+    return this.oAuth2Client;
   }
 
   getConfig(): any {
@@ -40,7 +40,7 @@ export class OAuth2Service {
       clientID: this.clientId,
       clientSecret: this.clientSecret,
       callbackURL: this.redirectUrl,
-      scope: ['email', 'profile', 'https://www.googleapis.com/auth/drive']
+      scope: ['email', 'profile', 'https://www.googleapis.com/auth/drive'],
     };
   }
 }

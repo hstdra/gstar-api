@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { CoreController } from './core.controller';
 import { DependencyModule } from 'src/dependency.module';
+import { FolderController } from './folder.controller';
 
 @Module({
   imports: [DependencyModule],
-  controllers: [CoreController],
+  controllers: [FolderController],
   providers: [],
 })
-export class CoreModule {}
+export class FolderModule {}

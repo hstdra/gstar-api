@@ -15,12 +15,8 @@ export class CoreService {
     private readonly folderService: FolderService,
   ) {}
 
-  async getFolders(): Promise<Folder[]> {
-    return this.folderService.getFolders();
-  }
-
   async getFolder(folderId: string): Promise<Folder> {
-    const folder = await this.folderService.findOne(folderId);
+    const folder = await this.folderService.findFolder(folderId);
     const files = await this.getCombinedFiles(folder);
     folder.files = files.filter(file => file.status !== 'BOTH_DELETED');
     this.syncFolder(folder, folder.files, true);
@@ -181,7 +177,7 @@ export class CoreService {
     for (let index = 0; index < files.length; index++) {
       const file = files[index];
       const callBackSave = async () => {
-        this.folderService.saveFolder(folder);
+        this.folderService.saveFolderFiles(folder);
       };
 
       switch (file.status) {
@@ -214,13 +210,13 @@ export class CoreService {
     }
 
     if (isRoot) {
-      this.folderService.saveFolder(folder);
+      this.folderService.saveFolderFiles(folder);
 
-      setTimeout(() => {
-        console.log(`${folder.id}: ${new Date().toISOString()}`);
+      // setTimeout(() => {
+      //   console.log(`${folder.id}: ${new Date().toISOString()}`);
 
-        this.getFolder(folder.id);
-      }, 3000);
+      //   this.getFolder(folder.id);
+      // }, 3000);
     }
   }
 }

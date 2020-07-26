@@ -1,4 +1,4 @@
-import { Column, Entity, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class User {
@@ -13,7 +13,4 @@ export class User {
 
   @Column()
   avatar: string;
-
-  @Column({ default: false })
-  isCurrentUser: boolean;
 }

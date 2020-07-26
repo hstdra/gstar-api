@@ -12,39 +12,53 @@ export class FolderService {
     private readonly userService: UserService,
   ) {}
 
-  async getFolders(): Promise<Folder[]> {
+  async findFolders(): Promise<Folder[]> {
     const user = await this.userService.getCurrentUser();
 
-    return await this.folderRepo.find({
+    return this.folderRepo.find({
       where: { userId: user.id },
-      select: ['id', 'localPath', 'drivePath'],
+      select: ['id', 'localPath', 'drivePath', 'autoSync'],
     });
   }
 
-  async findOne(folderId: string): Promise<Folder> {
+  async findFolder(folderId: string): Promise<Folder> {
     const folder = await this.folderRepo.findOne(folderId);
 
     return folder.beautify();
   }
 
-  async saveFolder(folder: Folder): Promise<Folder> {
-    const existedFolder = await this.folderRepo.findOne({
-      where: {
-        localPath: folder.localPath,
-        drivePath: folder.drivePath,
-      },
-    });
+  async deleteFolder(folderId: string): Promise<any> {
+    return this.folderRepo.delete({ id: folderId });
+  }
 
-    if (existedFolder) {
-      existedFolder.files = folder.files;
-      await this.folderRepo.save(existedFolder);
+  async saveFolderFiles(folder: Folder): Promise<Folder> {
+    await this.folderRepo.update(
+      { id: folder.id },
+      { files: JSON.stringify(folder.files) },
+    );
 
-      return existedFolder.beautify();
+    return folder.beautify();
+  }
+
+  async saveFolderInfo(folder: Folder): Promise<Folder> {
+    if (folder.id) {
+      await this.folderRepo.update(
+        { id: folder.id },
+        {
+          localPath: folder.localPath,
+          drivePath: folder.drivePath,
+          autoSync: folder.autoSync,
+        },
+      );
+
+      return folder;
     } else {
       folder.userId = (await this.userService.getCurrentUser()).id;
+      folder.files = JSON.parse('[]');
+      folder.autoSync = false;
       await this.folderRepo.save(folder);
 
-      return folder.beautify();
+      return folder;
     }
   }
 }

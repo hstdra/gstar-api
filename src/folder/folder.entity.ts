@@ -20,20 +20,17 @@ export class Folder {
   @Column()
   drivePath: string;
 
-  @Column('text')
-  files: any;
+  @Column({default: false})
+  autoSync: boolean;
 
-  @BeforeInsert()
-  @BeforeUpdate()
-  async convertFiles(): Promise<void> {
-    this.files = JSON.stringify(this.files);
-  }
+  @Column('text')
+  files: string;
 
   beautify(): Folder {
     try {
       this.files = JSON.parse(this.files.toString());
     } catch (error) {
-      this.files = [];
+      this.files = JSON.parse('[]');
     } finally {
       return this;
     }

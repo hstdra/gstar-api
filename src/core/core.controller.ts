@@ -12,16 +12,6 @@ export class CoreController {
     private readonly localService: LocalService,
   ) {}
 
-  @Get('drive')
-  async listDriveFiles(): Promise<any> {
-    return this.driveService.getDriveFiles('root');
-  }
-
-  @Get('local')
-  async listLocalFiles(): Promise<any> {
-    return this.localService.getLocalFiles('I:\\SuperTest');
-  }
-
   @Get('combined')
   async getCombinedFiles(): Promise<any> {
     const localPath = 'I:\\SuperTest';
@@ -30,10 +20,5 @@ export class CoreController {
     return await this.coreService.getFolder(
       '85cf3fdf-42e8-49d2-ad74-4e2ace79a54f',
     );
-  }
-
-  @Get('folders')
-  async getFolders(): Promise<any> {
-    return this.coreService.getFolders();
   }
 }
