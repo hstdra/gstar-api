@@ -17,7 +17,7 @@ export class CoreController {
     const localPath = 'I:\\SuperTest';
     const drivePath = '1dxzVuqpq7rSPxmcI0xVCWOjNO_FkNtB4';
 
-    return await this.coreService.getFolder(
+    return await this.coreService.syncFolder(
       '85cf3fdf-42e8-49d2-ad74-4e2ace79a54f',
     );
   }

@@ -1,10 +1,4 @@
-import {
-  Column,
-  Entity,
-  PrimaryGeneratedColumn,
-  BeforeInsert,
-  BeforeUpdate,
-} from 'typeorm';
+import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
 
 @Entity()
 export class Folder {
@@ -20,7 +14,10 @@ export class Folder {
   @Column()
   drivePath: string;
 
-  @Column({default: false})
+  @Column()
+  autoKey: string;
+
+  @Column({ default: false })
   autoSync: boolean;
 
   @Column('text')

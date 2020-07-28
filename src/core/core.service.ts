@@ -6,20 +6,105 @@ import * as fs from 'fs';
 import { FolderService } from 'src/folder/folder.service';
 import { Folder } from 'src/folder/folder.entity';
 import * as moment from 'moment';
+import * as uuid from 'uuid';
+import { AppGateway } from 'src/app.gateway';
+import { setTimeout } from 'timers';
 
 @Injectable()
 export class CoreService {
+  private isNew = false;
+  private data = new Map();
+  private folderJobs = new Map<string, Map<string, any>>();
+
   constructor(
     private readonly driveService: DriveService,
     private readonly localService: LocalService,
     private readonly folderService: FolderService,
-  ) {}
+    private readonly appGateway: AppGateway,
+  ) {
+    this.reset();
+  }
 
-  async getFolder(folderId: string): Promise<Folder> {
+  async reset(): Promise<void> {
+    this.updateData().then(() => {
+      this.autoSyncAll();
+      this.autoSendData();
+    });
+  }
+
+  async clear(): Promise<void> {
+    const folders = await this.folderService.findFolders();
+    folders
+      .filter(folder => folder.autoSync)
+      .forEach(folder => {
+        this.folderJobs.delete(folder.id);
+        this.folderService.saveFolderKey(folder.id, '');
+      });
+  }
+
+  async addFolderJob(folderId: string): Promise<any> {
+    if (!this.folderJobs.has(folderId)) {
+      this.folderJobs.set(folderId, new Map());
+    }
+    const uid = uuid.v4();
+    this.folderJobs.get(folderId).set(uid, null);
+
+    return () => this.folderJobs.get(folderId).delete(uid);
+  }
+
+  async isEmptyFolderJob(folderId): Promise<boolean> {
+    const folderJob = this.folderJobs.get(folderId);
+
+    return !folderJob || !folderJob.size;
+  }
+
+  async updateData() {
+    this.folderService.findFolders(true).then(folders => {
+      this.data = folders.reduce((acc, folder) => {
+        folder.beautify();
+        return acc.set(folder.id, folder);
+      }, new Map());
+      this.isNew = true;
+    });
+  }
+
+  async updateFolderData(folder: Folder, files: any) {
+    this.data.set(folder.id, { ...folder, files });
+    this.isNew = true;
+  }
+
+  async autoSendData() {
+    setInterval(() => {
+      if (this.isNew) {
+        this.appGateway.server.emit('data', Array.from(this.data.values()));
+        this.isNew = false;
+      }
+    }, 1000);
+  }
+
+  async autoSyncAll() {
+    const folders = await this.folderService.findFolders();
+    folders
+      .filter(folder => folder.autoSync)
+      .forEach(folder => {
+        this.autoSyncFolder(folder.id);
+      });
+  }
+
+  async autoSyncFolder(folderId: string): Promise<void> {
+    const autoKey = uuid.v4();
     const folder = await this.folderService.findFolder(folderId);
-    const files = await this.getCombinedFiles(folder);
-    folder.files = files.filter(file => file.status !== 'BOTH_DELETED');
-    this.syncFolder(folder, folder.files, true);
+    await this.folderService.saveFolderKey(folderId, autoKey);
+
+    if (folder.autoSync) {
+      await this.syncFolder(folderId, autoKey);
+    }
+  }
+
+  async syncFolder(folderId: string, autoKey?: string): Promise<Folder> {
+    const folder = await this.folderService.findFolder(folderId);
+    folder.files = await this.getCombinedFiles(folder);
+    this.completeFolder(folder, folder.files, true, autoKey);
 
     return folder;
   }
@@ -173,50 +258,98 @@ export class CoreService {
     }
   }
 
-  async syncFolder(folder: Folder, files: any, isRoot: boolean): Promise<void> {
+  async completeFolder(
+    folder: Folder,
+    files: any,
+    isRoot: boolean,
+    autoKey?: string,
+  ): Promise<void> {
     for (let index = 0; index < files.length; index++) {
       const file = files[index];
-      const callBackSave = async () => {
-        this.folderService.saveFolderFiles(folder);
-      };
 
-      switch (file.status) {
-        case 'WAITING_UPLOAD':
-          console.log(`Uploading ${file.name}`);
-          await this.driveService.uploadFile(file, callBackSave);
-          break;
+      if (
+        [
+          'WAITING_UPLOAD',
+          'WAITING_DOWNLOAD',
+          'LOCAL_DELETED',
+          'DRIVE_DELETED',
+          'BOTH_DELETED',
+        ].includes(file.status)
+      ) {
+        const clearJob = await this.addFolderJob(folder.id);
 
-        case 'WAITING_DOWNLOAD':
-          console.log(`Downloading ${file.name}`);
-          await this.driveService.downloadFile(file, callBackSave);
-          break;
+        const callBackSave = async () => {
+          delete file.progress;
+          await this.folderService.saveFolderFiles(folder, files);
+          await clearJob();
+        };
 
-        case 'LOCAL_DELETED':
-          files.splice(index, 1);
-          console.log(`Drive delete ${file.name}`);
-          await this.driveService.deleteFile(file, callBackSave);
-          break;
+        switch (file.status) {
+          case 'WAITING_UPLOAD':
+            console.log(`Uploading ${file.name}`);
+            this.driveService.uploadFile(file, callBackSave);
 
-        case 'DRIVE_DELETED':
-          files.splice(index, 1);
-          console.log(`Local delete ${file.name}`);
-          await this.localService.deleteFile(file, callBackSave);
-          break;
+            break;
+
+          case 'WAITING_DOWNLOAD':
+            console.log(`Downloading ${file.name}`);
+
+            this.driveService.downloadFile(file, callBackSave);
+
+            break;
+
+          case 'LOCAL_DELETED':
+            files.splice(index, 1);
+
+            console.log(`Drive deleted ${file.name}`);
+            await this.driveService.deleteFile(file, callBackSave);
+
+            break;
+
+          case 'DRIVE_DELETED':
+            files.splice(index, 1);
+            console.log(`Local deleted ${file.name}`);
+            await this.localService.deleteFile(file, callBackSave);
+
+            break;
+
+          case 'BOTH_DELETED':
+            files.splice(index, 1);
+            await callBackSave();
+
+            break;
+        }
       }
 
       if (file.isDirectory && file.children.length > 0) {
-        await this.syncFolder(folder, file.children, false);
+        await this.completeFolder(folder, file.children, false);
       }
     }
 
     if (isRoot) {
-      this.folderService.saveFolderFiles(folder);
+      const interval = setInterval(async () => {
+        await this.updateFolderData(folder, files);
 
-      // setTimeout(() => {
-      //   console.log(`${folder.id}: ${new Date().toISOString()}`);
+        if (await this.isEmptyFolderJob(folder.id)) {
+          this.folderService.saveFolderFiles(folder, files);
 
-      //   this.getFolder(folder.id);
-      // }, 3000);
+          if (autoKey) {
+            const newFolder = await this.folderService.findFolder(folder.id);
+
+            if (autoKey === newFolder.autoKey) {
+              setTimeout(() => {
+                console.log(`[DONE] ${folder.id}: ${new Date().toISOString()}`);
+
+                this.syncFolder(folder.id, autoKey);
+              }, 3500);
+            } else {
+              console.log(`[END] ${folder.id}: ${new Date().toISOString()}`);
+            }
+          }
+
+          clearInterval(interval);
+        }
+      }, 200);
     }
   }
 }

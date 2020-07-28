@@ -12,12 +12,18 @@ export class FolderService {
     private readonly userService: UserService,
   ) {}
 
-  async findFolders(): Promise<Folder[]> {
+  async findFolders(isGetFiles?): Promise<Folder[]> {
     const user = await this.userService.getCurrentUser();
+
+    if (isGetFiles) {
+      return this.folderRepo.find({
+        where: { userId: user.id },
+      });
+    }
 
     return this.folderRepo.find({
       where: { userId: user.id },
-      select: ['id', 'localPath', 'drivePath', 'autoSync'],
+      select: ['id', 'localPath', 'drivePath', 'autoSync', 'autoKey'],
     });
   }
 
@@ -31,10 +37,10 @@ export class FolderService {
     return this.folderRepo.delete({ id: folderId });
   }
 
-  async saveFolderFiles(folder: Folder): Promise<Folder> {
+  async saveFolderFiles(folder: Folder, files: any): Promise<Folder> {
     await this.folderRepo.update(
       { id: folder.id },
-      { files: JSON.stringify(folder.files) },
+      { files: JSON.stringify(files) },
     );
 
     return folder.beautify();
@@ -56,9 +62,19 @@ export class FolderService {
       folder.userId = (await this.userService.getCurrentUser()).id;
       folder.files = JSON.parse('[]');
       folder.autoSync = false;
+      folder.autoKey = '';
       await this.folderRepo.save(folder);
 
       return folder;
     }
+  }
+
+  async saveFolderKey(folderId: string, autoKey: string): Promise<void> {
+    await this.folderRepo.update(
+      { id: folderId },
+      {
+        autoKey,
+      },
+    );
   }
 }

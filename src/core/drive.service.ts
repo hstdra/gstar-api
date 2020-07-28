@@ -64,17 +64,19 @@ export class DriveService {
       let bytes = 0;
       let threshHold = 0;
 
-      this.drive.files
+      await this.drive.files
         .get({ fileId: file.id, alt: 'media' }, { responseType: 'stream' })
         .then(res => {
           res.data
-            .on('error', err => {})
+            .on('error', err => console.log(err))
             .on('data', d => {
               bytes += d.length;
               file.progress = Math.round((bytes / file.size) * 100);
+              file.status = 'DOWNLOADING';
 
               if (file.progress >= threshHold) {
                 threshHold += 5;
+
                 // ioService.emit('data', data);
               }
             })
@@ -127,6 +129,7 @@ export class DriveService {
             {
               onUploadProgress: evt => {
                 file.progress = Math.round((evt.bytesRead / file.size) * 100);
+                file.status = 'UPLOADING';
 
                 if (file.progress >= threshHold) {
                   threshHold += 5;
@@ -154,6 +157,7 @@ export class DriveService {
             {
               onUploadProgress: evt => {
                 file.progress = Math.round((evt.bytesRead / file.size) * 100);
+                file.status = 'UPLOADING';
 
                 if (file.progress >= threshHold) {
                   threshHold += 5;
