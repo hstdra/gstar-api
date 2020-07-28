@@ -9,6 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { User } from './user/user.entity';
 import { Folder } from './folder/folder.entity';
 import { AppGateway } from './app.gateway';
+import { GoogleStrategy } from './auth/google.strategy';
 
 @Module({
   imports: [TypeOrmModule.forFeature([User, Folder])],
@@ -20,6 +21,7 @@ import { AppGateway } from './app.gateway';
     CoreService,
     FolderService,
     AppGateway,
+    GoogleStrategy,
   ],
   exports: [
     OAuth2Service,
@@ -29,6 +31,7 @@ import { AppGateway } from './app.gateway';
     CoreService,
     FolderService,
     AppGateway,
+    GoogleStrategy,
   ],
 })
 export class DependencyModule {}

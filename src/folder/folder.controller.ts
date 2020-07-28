@@ -1,10 +1,21 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { Controller, Get, Param, Body, Put, Delete, Post } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Body,
+  Put,
+  Delete,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { FolderService } from './folder.service';
 import { Folder } from './folder.entity';
 import { CoreService } from 'src/core/core.service';
+import { LocalGuard } from 'src/auth/auth.guard';
 
 @Controller('folders')
+@UseGuards(LocalGuard)
 export class FolderController {
   constructor(
     private readonly folderService: FolderService,

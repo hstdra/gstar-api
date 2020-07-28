@@ -29,11 +29,6 @@ export class OAuth2Service {
       access_token: accessToken,
       refresh_token: refreshToken,
     });
-    console.log(
-      'OAuth2Service -> setCredentials -> refreshToken',
-      refreshToken,
-    );
-    console.log('OAuth2Service -> setCredentials -> accessToken', accessToken);
   }
 
   getOAuth2Client(): OAuth2Client {

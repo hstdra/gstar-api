@@ -15,6 +15,8 @@ export class FolderService {
   async findFolders(isGetFiles?): Promise<Folder[]> {
     const user = await this.userService.getCurrentUser();
 
+    if (!user) return [];
+
     if (isGetFiles) {
       return this.folderRepo.find({
         where: { userId: user.id },

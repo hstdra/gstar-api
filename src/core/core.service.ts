@@ -34,6 +34,7 @@ export class CoreService {
 
   async clear(): Promise<void> {
     const folders = await this.folderService.findFolders();
+    
     folders
       .filter(folder => folder.autoSync)
       .forEach(folder => {

@@ -12,8 +12,8 @@ export class UserService {
     @InjectRepository(User) private readonly userRepo: Repository<User>,
   ) {
     // Temp for dev
-    this.currentUser = new User();
-    this.currentUser.id = 'cd8e2eea-88eb-4929-932f-b72dd9073982';
+    // this.currentUser = new User();
+    // this.currentUser.id = 'cd8e2eea-88eb-4929-932f-b72dd9073982';
   }
 
   async saveCurrentUser(profile: any): Promise<User> {
@@ -34,5 +34,9 @@ export class UserService {
 
   async getCurrentUser(): Promise<User> {
     return this.currentUser;
+  }
+
+  async logOut(): Promise<void> {
+    this.currentUser = null;
   }
 }

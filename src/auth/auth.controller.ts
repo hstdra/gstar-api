@@ -2,6 +2,7 @@
 import { Controller, Get, Req, UseGuards, Redirect } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserService } from 'src/user/user.service';
+import { LocalGuard } from './auth.guard';
 
 @Controller('auth')
 export class AuthController {
@@ -19,7 +20,13 @@ export class AuthController {
   }
 
   @Get('profile')
+  @UseGuards(LocalGuard)
   getProfile() {
     return this.userService.getCurrentUser();
+  }
+
+  @Get('logout')
+  logOut() {
+    return this.userService.logOut();
   }
 }
