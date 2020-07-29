@@ -30,6 +30,10 @@ export class LocalService {
               newFile.children = await this.getLocalFiles(
                 `${localPath}\\${file.name}`,
               );
+              newFile.size = newFile.children.reduce(
+                (acc, file) => acc + file.size,
+                0,
+              );
             }
 
             return newFile;

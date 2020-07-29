@@ -74,11 +74,7 @@ export class DriveService {
               file.progress = Math.round((bytes / file.size) * 100);
               file.status = 'DOWNLOADING';
 
-              if (file.progress >= threshHold) {
-                threshHold += 5;
-
-                // ioService.emit('data', data);
-              }
+            
             })
             .on('end', async () => {
               fs.utimesSync(
@@ -131,10 +127,6 @@ export class DriveService {
                 file.progress = Math.round((evt.bytesRead / file.size) * 100);
                 file.status = 'UPLOADING';
 
-                if (file.progress >= threshHold) {
-                  threshHold += 5;
-                  // ioService.emit('data', data);
-                }
               },
             },
           )
@@ -159,10 +151,7 @@ export class DriveService {
                 file.progress = Math.round((evt.bytesRead / file.size) * 100);
                 file.status = 'UPLOADING';
 
-                if (file.progress >= threshHold) {
-                  threshHold += 5;
-                  // ioService.emit('data', data);
-                }
+                
               },
             },
           )

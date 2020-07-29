@@ -170,6 +170,7 @@ export class CoreService {
           file.mimeType === 'application/vnd.google-apps.folder';
           file.status = 'FOLDER';
           file.isExistBefore = true;
+          file.size = file.localSize || file.driveSize;
 
           file.children = await this.getCombinedFiles({
             localPath: file.path,
@@ -342,7 +343,7 @@ export class CoreService {
                 console.log(`[DONE] ${folder.id}: ${new Date().toISOString()}`);
 
                 this.syncFolder(folder.id, autoKey);
-              }, 3500);
+              }, 5000);
             } else {
               console.log(`[END] ${folder.id}: ${new Date().toISOString()}`);
             }
